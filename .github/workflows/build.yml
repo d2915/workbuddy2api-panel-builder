@@ -1,5 +1,10 @@
 name: 构建并推送镜像
 
+# 本仓库只做一件事：把上游源码编译成镜像并推送到 GHCR，
+# 让 NAS 上的 Watchtower 能像更新 cli-proxy-api 一样自动更新 workbuddy2api-panel。
+#
+# 这个文件是唯一必需的文件；仓库里其他内容都只是本地辅助材料。
+
 on:
   schedule:
     # UTC 18:00 = 北京时间 02:00，比 NAS 上 Watchtower 的 04:00 早 2 小时
@@ -16,6 +21,13 @@ on:
 env:
   UPSTREAM_REPO: linguo2625469/workbuddy2api-panel
   IMAGE_NAME: workbuddy2api-panel
+
+  # ── 上游部署文件基线（对应提交 88545c1 / 版本 1.9.1-panel）──────────────
+  # 上游一旦改动 Dockerfile 或 docker-compose.yml，构建会自动停止并提示你确认，
+  # 避免上游部署方式的变化（例如改成镜像内编译）被静默套用到你的部署上。
+  # 确认无误后，把下面两行改成 Actions 日志里打印的「上游」值，提交即可放行。
+  BASELINE_DOCKERFILE: 07d49509422a67fdeafa367e54f8079ef69e98ba005a20c680294666342e832b
+  BASELINE_COMPOSE: 770995e293b2348da97d29ecb3fcecc8a37dd6cad22169af88dce9394b005c09
 
 jobs:
   build:
@@ -46,12 +58,10 @@ jobs:
           cd upstream
           D_NEW=$(sha256sum Dockerfile | cut -d' ' -f1)
           C_NEW=$(sha256sum docker-compose.yml | cut -d' ' -f1)
-          D_OLD=$(jq -r '.dockerfile' ../.upstream-baseline.json)
-          C_OLD=$(jq -r '.docker_compose' ../.upstream-baseline.json)
 
           CHANGED=""
-          [ "$D_NEW" = "$D_OLD" ] || CHANGED="${CHANGED}Dockerfile "
-          [ "$C_NEW" = "$C_OLD" ] || CHANGED="${CHANGED}docker-compose.yml "
+          [ "$D_NEW" = "$BASELINE_DOCKERFILE" ] || CHANGED="${CHANGED}Dockerfile "
+          [ "$C_NEW" = "$BASELINE_COMPOSE" ] || CHANGED="${CHANGED}docker-compose.yml "
 
           if [ -n "$CHANGED" ] && [ "${{ inputs.force_build }}" != "true" ]; then
             {
@@ -61,10 +71,12 @@ jobs:
               echo ""
               echo "| 文件 | 基线 | 上游 |"
               echo "|---|---|---|"
-              echo "| Dockerfile | \`${D_OLD}\` | \`${D_NEW}\` |"
-              echo "| docker-compose.yml | \`${C_OLD}\` | \`${C_NEW}\` |"
+              echo "| Dockerfile | \`${BASELINE_DOCKERFILE}\` | \`${D_NEW}\` |"
+              echo "| docker-compose.yml | \`${BASELINE_COMPOSE}\` | \`${C_NEW}\` |"
               echo ""
-              echo "确认无误后，把 \`.upstream-baseline.json\` 里对应的哈希改成上面的『上游』值并提交，即可放行。"
+              echo "确认无误后，把 build.yml 里的 \`BASELINE_DOCKERFILE\` / \`BASELINE_COMPOSE\` 改成上面的『上游』值，提交即可放行。"
+              echo ""
+              echo "查看上游改动：https://github.com/${UPSTREAM_REPO}/commit/${UPSTREAM_SHA}"
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::上游部署文件变化（${CHANGED}），已停止自动构建，请人工确认"
             exit 1

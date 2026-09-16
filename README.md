@@ -27,11 +27,16 @@ NAS 上的 Watchtower（每天 04:00）
 
 ```
 ghcr-builder/
-├─ .github/workflows/build.yml   云端构建脚本（上传到 GitHub）
-├─ .upstream-baseline.json       上游部署文件基线（变更拦截用）
+├─ .github/workflows/build.yml   云端构建脚本（唯一必须上传到 GitHub 的文件）
 ├─ nas/docker-compose.yml        NAS 上要替换的 compose
+├─ nas/switch-to-ghcr.sh         NAS 一键切换脚本
+├─ push-to-github.ps1            一键推送脚本
 └─ README.md                     本文件
 ```
+
+GitHub 仓库里**只需要 `.github/workflows/build.yml` 一个文件**就能工作。
+上游基线哈希已内联在该文件开头的 `BASELINE_DOCKERFILE` / `BASELINE_COMPOSE` 里。
+其余文件是 NAS 端辅助材料，放本地即可。
 
 ## 前置条件
 
