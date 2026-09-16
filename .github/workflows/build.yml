@@ -26,8 +26,12 @@ env:
   # 上游一旦改动 Dockerfile 或 docker-compose.yml，构建会自动停止并提示你确认，
   # 避免上游部署方式的变化（例如改成镜像内编译）被静默套用到你的部署上。
   # 确认无误后，把下面两行改成 Actions 日志里打印的「上游」值，提交即可放行。
-  BASELINE_DOCKERFILE: 07d49509422a67fdeafa367e54f8079ef69e98ba005a20c680294666342e832b
-  BASELINE_COMPOSE: 770995e293b2348da97d29ecb3fcecc8a37dd6cad22169af88dce9394b005c09
+  #
+  # 注意：这两个哈希是「剥离 CR 之后」的内容哈希（LF 口径）。
+  # 工作流里用 `tr -d '\r'` 归一化后再哈希，因此在 Windows 上算出来的值
+  # 与 Linux runner 上算出来的值一致，不受 core.autocrlf 影响。
+  BASELINE_DOCKERFILE: cd8c27229aadeaba5b522a6ac92d78305fb49c8514aec3d2cbc195e6be7b1db3
+  BASELINE_COMPOSE: 2564ebf2a7ef668e464be264b764f00357e7492a69463f24714b124f7d6c0896
 
 jobs:
   build:
@@ -60,8 +64,10 @@ jobs:
         run: |
           set -euo pipefail
           cd upstream
-          D_NEW=$(sha256sum Dockerfile | cut -d' ' -f1)
-          C_NEW=$(sha256sum docker-compose.yml | cut -d' ' -f1)
+          # 剥离 CR 后哈希：Windows 检出（core.autocrlf）与 Linux runner 口径一致，
+          # 避免仅因换行符差异就误判为「上游改动了部署文件」。
+          D_NEW=$(tr -d '\r' < Dockerfile | sha256sum | cut -d' ' -f1)
+          C_NEW=$(tr -d '\r' < docker-compose.yml | sha256sum | cut -d' ' -f1)
 
           CHANGED=""
           [ "$D_NEW" = "$BASELINE_DOCKERFILE" ] || CHANGED="${CHANGED}Dockerfile "
