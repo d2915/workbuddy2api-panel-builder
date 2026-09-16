@@ -27,16 +27,25 @@ NAS 上的 Watchtower（每天 04:00）
 
 ```
 ghcr-builder/
-├─ .github/workflows/build.yml   云端构建脚本（唯一必须上传到 GitHub 的文件）
-├─ nas/docker-compose.yml        NAS 上要替换的 compose
-├─ nas/switch-to-ghcr.sh         NAS 一键切换脚本
-├─ push-to-github.ps1            一键推送脚本
-└─ README.md                     本文件
+├─ .github/workflows/build.yml       云端构建脚本（核心）
+├─ .github/workflows/heartbeat.yml   保活心跳（防止 60 天无活动被停用）
+├─ nas/docker-compose.yml            NAS 上要替换的 compose
+├─ nas/switch-to-ghcr.sh             NAS 一键切换脚本
+├─ push-to-github.ps1                一键推送脚本
+└─ README.md                         本文件
 ```
 
-GitHub 仓库里**只需要 `.github/workflows/build.yml` 一个文件**就能工作。
-上游基线哈希已内联在该文件开头的 `BASELINE_DOCKERFILE` / `BASELINE_COMPOSE` 里。
+GitHub 仓库里只需要两个 workflow 文件就能工作。
+上游基线哈希已内联在 `build.yml` 开头的 `BASELINE_DOCKERFILE` / `BASELINE_COMPOSE` 里。
 其余文件是 NAS 端辅助材料，放本地即可。
+
+## 保活心跳
+
+GitHub 会在仓库「连续 60 天无活动」后自动禁用该仓库的定时工作流。本仓库平时只有
+定时任务在跑，因此用 `heartbeat.yml` 每月 1 日提交一次 `.heartbeat`，产生仓库活动。
+
+`heartbeat.yml` 与 `build.yml` 分开是必要的：`build.yml` 监听 `push`，若把心跳步骤
+放进去，心跳提交会再触发 `build.yml`，形成循环。心跳提交信息带 `[skip ci]` 作为双重保险。
 
 ## 前置条件
 
