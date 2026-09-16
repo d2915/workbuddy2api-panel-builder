@@ -45,12 +45,16 @@ jobs:
           set -euo pipefail
           git clone --depth 1 "https://github.com/${UPSTREAM_REPO}.git" upstream
           cd upstream
+          SHA=$(git rev-parse HEAD)
+          SHORT=$(git rev-parse --short HEAD)
+          VER=$(grep -oP 'const appVersion = "\K[^"]+' cmd/server/main.go || echo unknown)
+          # 写入 $GITHUB_ENV 供后续步骤使用（当前步骤内不可见，故用上面的局部变量打印）
           {
-            echo "UPSTREAM_SHA=$(git rev-parse HEAD)"
-            echo "UPSTREAM_SHORT=$(git rev-parse --short HEAD)"
-            echo "UPSTREAM_VERSION=$(grep -oP 'const appVersion = "\K[^"]+' cmd/server/main.go || echo unknown)"
+            echo "UPSTREAM_SHA=$SHA"
+            echo "UPSTREAM_SHORT=$SHORT"
+            echo "UPSTREAM_VERSION=$VER"
           } >> "$GITHUB_ENV"
-          echo "上游提交: $UPSTREAM_SHORT  版本: $UPSTREAM_VERSION"
+          echo "上游提交: $SHORT  版本: $VER"
 
       - name: 上游部署文件变更拦截
         run: |
