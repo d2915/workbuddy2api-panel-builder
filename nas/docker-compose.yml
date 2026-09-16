@@ -1,0 +1,24 @@
+services:
+  wb2api:
+    # 改成 GHCR 远程镜像后，Watchtower 才能像更新 cli-proxy-api 一样更新它。
+    # 把 OWNER 换成你的 GitHub 用户名（全小写）。
+    image: ghcr.io/d2915/workbuddy2api-panel:latest
+
+    # 下面这行原来的 build: . 必须删除。
+    # 保留它会让 docker compose up 走本地构建，Watchtower 依然无法更新。
+
+    container_name: workbuddy2api-panel
+    restart: unless-stopped
+
+    # 保留你原来的 root 运行配置（Synology SMB 目录属主与容器 uid 10001 不一致）
+    user: "0:0"
+
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "7863:7863"
+    volumes:
+      - ./auths:/app/auths
+      - ./data:/app/data
+      # 不挂 :ro：面板「配置」页需要写回此文件（保存后热生效）
+      - ./config.json:/app/config.json

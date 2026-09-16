@@ -1,0 +1,9 @@
+{
+  "_说明": "上游 Dockerfile / docker-compose.yml 的基线哈希。上游这两个文件一旦变化，构建会被自动拦截并通知你确认。",
+  "_如何放行": "人工确认上游改动没问题后，把下面两个哈希改成日志里打印的『上游』值，提交即可。",
+  "upstream_repo": "linguo2625469/workbuddy2api-panel",
+  "upstream_commit": "88545c124eff93a9b7a69d1533eb25628e220b07",
+  "upstream_version": "1.9.1-panel",
+  "dockerfile": "07d49509422a67fdeafa367e54f8079ef69e98ba005a20c680294666342e832b",
+  "docker_compose": "770995e293b2348da97d29ecb3fcecc8a37dd6cad22169af88dce9394b005c09"
+}
